@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: homelab
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homelab-api
+  namespace: homelab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: homelab-api
+  template:
+    metadata:
+      labels:
+        app: homelab-api
+    spec:
+      containers:
+        - name: api
+          image: panda975/homelab:0.1.0
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homelab-api
+  namespace: homelab
+spec:
+  type: ClusterIP
+  selector:
+    app: homelab-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
